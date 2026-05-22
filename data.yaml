@@ -1,0 +1,11 @@
+data_yaml = """
+path: /kaggle/working
+train: images/train
+val: images/val
+
+nc: 1
+names: ['vehicle']
+"""
+
+with open("/kaggle/working/data.yaml", "w") as f:
+    f.write(data_yaml)
