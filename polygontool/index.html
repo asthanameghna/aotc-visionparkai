@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking - Premium Admin Configurator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            background: radial-gradient(circle at top right, #1e293b, #0f172a); 
+            color: #f8fafc; 
+            font-family: 'Inter', sans-serif; 
+            margin: 0;
+            overflow: hidden;
+        }
+        h1, h2, h3 { font-family: 'Outfit', sans-serif; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+        canvas { 
+            cursor: crosshair;
+            touch-action: none; /* Prevent scroll on touch */
+        }
+        canvas.grabbing { cursor: grabbing !important; }
+        canvas.grab { cursor: grab !important; }
+
+        .glass-panel { 
+            background: rgba(30, 41, 59, 0.45); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08); 
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.6);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+            transition: all 0.3s ease;
+        }
+        .btn-success:hover {
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.6);
+            transform: translateY(-1px);
+        }
+
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="glass-panel w-full py-4 px-8 flex justify-between items-center z-20 sticky top-0 border-b border-slate-700/50">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-emerald-400 p-[2px]">
+                <div class="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
+                    <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                </div>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-white tracking-wide">Smart Parking</h1>
+                <p class="text-xs text-slate-400 font-medium tracking-wider uppercase">Geometry Configurator</p>
+            </div>
+        </div>
+        <div class="flex gap-4">
+            <label class="cursor-pointer btn-primary text-white px-5 py-2.5 rounded-lg font-medium text-sm flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                Upload Frame
+                <input type="file" id="imageUpload" accept="image/*" class="hidden">
+            </label>
+            <button id="exportBtn" class="btn-success text-white px-5 py-2.5 rounded-lg font-medium text-sm flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                Export JSON
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex flex-1 overflow-hidden relative">
+        
+        <!-- Canvas Area -->
+        <div class="flex-1 relative flex items-center justify-center bg-slate-900/50 p-6 overflow-auto" id="canvasContainer">
+            
+            <!-- Canvas Wrapper -->
+            <div id="wrapper" class="relative shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-xl overflow-hidden border border-slate-700/60 hidden transition-all duration-500">
+                <img id="bgImage" class="block max-w-full h-auto select-none pointer-events-none" alt="Camera Feed" draggable="false">
+                <canvas id="drawCanvas" class="absolute top-0 left-0 w-full h-full z-10 touch-none"></canvas>
+            </div>
+            
+            <!-- Instructions overlay when empty -->
+            <div id="instruction" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none fade-in">
+                <div class="w-24 h-24 rounded-full bg-slate-800/50 border border-slate-700/50 flex items-center justify-center mb-6 shadow-2xl">
+                    <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-2">No Frame Loaded</h2>
+                <p class="text-slate-400 text-center max-w-md">Upload a clear camera frame to begin drawing parking slot geometries. Your configuration will be mapped to the native resolution.</p>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="glass-panel w-80 h-full flex flex-col border-l border-slate-700/50 shadow-2xl z-20">
+            <!-- Instructions Panel -->
+            <div class="p-6 border-b border-slate-700/50 bg-slate-800/20">
+                <h2 class="text-sm font-bold text-slate-300 mb-3 uppercase tracking-wider flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Quick Guide
+                </h2>
+                <ul class="text-sm text-slate-400 space-y-2.5 relative">
+                    <li class="flex gap-3"><span class="text-blue-400 font-bold">1.</span> Click 4 corners to draw a slot</li>
+                    <li class="flex gap-3"><span class="text-blue-400 font-bold">2.</span> Enter unique Slot ID</li>
+                    <li class="flex gap-3"><span class="text-blue-400 font-bold">3.</span> Drag corner points to adjust</li>
+                    <li class="flex gap-3"><span class="text-blue-400 font-bold">4.</span> Export JSON when finished</li>
+                </ul>
+            </div>
+            
+            <!-- Slots List -->
+            <div class="p-6 flex-1 overflow-y-auto flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider">Configured Slots</h2>
+                    <span id="slotCount" class="bg-blue-500/20 border border-blue-500/30 text-blue-400 text-xs font-bold px-2.5 py-1 rounded-full">0</span>
+                </div>
+                <div id="slotsList" class="space-y-3 flex-1">
+                    <div id="emptySlotsMsg" class="h-full flex flex-col items-center justify-center text-slate-500 opacity-60">
+                        <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <p class="text-sm">No slots defined yet</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- Modal for Slot ID -->
+    <div id="modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 hidden flex items-center justify-center transition-opacity duration-300 opacity-0">
+        <div class="bg-slate-800 border border-slate-700/80 p-8 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] w-[400px] transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold text-white">Name Slot</h3>
+            </div>
+            <p class="text-slate-400 text-sm mb-6 ml-11">Assign a unique identifier (e.g., A1, VIP-3)</p>
+            
+            <input type="text" id="slotIdInput" class="w-full bg-slate-900/50 border border-slate-600 rounded-xl px-5 py-3.5 text-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 mb-6 placeholder-slate-500 transition-all font-medium text-lg" placeholder="Slot ID..." autocomplete="off">
+            
+            <div class="flex justify-end gap-3">
+                <button id="cancelModalBtn" class="px-5 py-2.5 text-slate-400 hover:text-white transition font-medium rounded-lg hover:bg-slate-700/50">Discard</button>
+                <button id="saveModalBtn" class="btn-primary text-white px-6 py-2.5 rounded-lg transition font-medium">Save Geometry</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const imageUpload = document.getElementById('imageUpload');
+        const wrapper = document.getElementById('wrapper');
+        const bgImage = document.getElementById('bgImage');
+        const canvas = document.getElementById('drawCanvas');
+        const ctx = canvas.getContext('2d');
+        const instruction = document.getElementById('instruction');
+        const slotsList = document.getElementById('slotsList');
+        const slotCount = document.getElementById('slotCount');
+        const emptySlotsMsg = document.getElementById('emptySlotsMsg');
+        const exportBtn = document.getElementById('exportBtn');
+        const modal = document.getElementById('modal');
+        const modalContent = document.getElementById('modalContent');
+        const slotIdInput = document.getElementById('slotIdInput');
+        
+        let polygons = {}; // { id: [{x,y}, ...] } in Native Coords
+        let currentPoints = []; // [{x,y}, ...] in Native Coords
+        
+        let isDragging = false;
+        let dragTarget = null; // { type: 'vertex', polygonId: 'A1', pointIndex: 2 }
+        const DRAG_RADIUS = 10; // Pixel radius for grab detection
+
+        // Helpers for Coordinate System
+        function getScale() {
+            if (!bgImage.naturalWidth || !canvas.width) return { scaleX: 1, scaleY: 1 };
+            return {
+                scaleX: bgImage.naturalWidth / canvas.width,
+                scaleY: bgImage.naturalHeight / canvas.height
+            };
+        }
+
+        function toNative(displayX, displayY) {
+            const { scaleX, scaleY } = getScale();
+            return { x: Math.round(displayX * scaleX), y: Math.round(displayY * scaleY) };
+        }
+
+        function toDisplay(nativeX, nativeY) {
+            const { scaleX, scaleY } = getScale();
+            return { x: nativeX / scaleX, y: nativeY / scaleY };
+        }
+
+        // Handle Image Upload
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                bgImage.src = event.target.result;
+                bgImage.onload = () => {
+                    instruction.classList.add('hidden');
+                    wrapper.classList.remove('hidden');
+                    wrapper.classList.add('fade-in');
+                    
+                    syncCanvasSize();
+                    
+                    // Reset
+                    polygons = {};
+                    currentPoints = [];
+                    updateSidebar();
+                    redraw();
+                };
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function syncCanvasSize() {
+            canvas.width = bgImage.clientWidth;
+            canvas.height = bgImage.clientHeight;
+        }
+
+        window.addEventListener('resize', () => {
+            if (!wrapper.classList.contains('hidden')) {
+                syncCanvasSize();
+                redraw();
+            }
+        });
+
+        // Mouse Events
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        // Check if mouse is near any vertex
+        function findVertexAt(displayX, displayY) {
+            for (const [id, points] of Object.entries(polygons)) {
+                for (let i = 0; i < points.length; i++) {
+                    const dPt = toDisplay(points[i].x, points[i].y);
+                    const dist = Math.hypot(dPt.x - displayX, dPt.y - displayY);
+                    if (dist <= DRAG_RADIUS) {
+                        return { type: 'vertex', polygonId: id, pointIndex: i };
+                    }
+                }
+            }
+            return null;
+        }
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (wrapper.classList.contains('hidden')) return;
+            const pos = getMousePos(e);
+            
+            if (isDragging && dragTarget) {
+                // Update vertex position
+                const nPos = toNative(pos.x, pos.y);
+                if (dragTarget.type === 'vertex') {
+                    polygons[dragTarget.polygonId][dragTarget.pointIndex] = nPos;
+                }
+                redraw();
+            } else {
+                // Update cursor style
+                const target = findVertexAt(pos.x, pos.y);
+                if (target) {
+                    canvas.classList.add('grab');
+                } else {
+                    canvas.classList.remove('grab');
+                }
+            }
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (wrapper.classList.contains('hidden')) return;
+            const pos = getMousePos(e);
+            
+            // 1. Check for Drag
+            const target = findVertexAt(pos.x, pos.y);
+            if (target) {
+                isDragging = true;
+                dragTarget = target;
+                canvas.classList.remove('grab');
+                canvas.classList.add('grabbing');
+                return; // Don't draw new points
+            }
+            
+            // 2. Otherwise, Draw new points
+            if (currentPoints.length < 4) {
+                currentPoints.push(toNative(pos.x, pos.y));
+                if (currentPoints.length === 4) {
+                    showModal();
+                }
+                redraw();
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            dragTarget = null;
+            canvas.classList.remove('grabbing');
+            redraw(); // snap to final position
+        });
+
+        // Modal Logic
+        function showModal() {
+            modal.classList.remove('hidden');
+            // Trigger animation frame for CSS transition
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                slotIdInput.value = '';
+                slotIdInput.focus();
+            });
+        }
+
+        function hideModal() {
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300); // match transition duration
+        }
+
+        document.getElementById('saveModalBtn').addEventListener('click', () => {
+            const id = slotIdInput.value.trim().toUpperCase();
+            if (!id) return;
+            
+            if (polygons[id]) {
+                if(!confirm(`Slot ${id} already exists. Overwrite?`)) return;
+            }
+            
+            polygons[id] = [...currentPoints];
+            currentPoints = [];
+            hideModal();
+            updateSidebar();
+            redraw();
+        });
+
+        document.getElementById('cancelModalBtn').addEventListener('click', () => {
+            currentPoints = [];
+            hideModal();
+            redraw();
+        });
+
+        slotIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('saveModalBtn').click();
+        });
+
+        // Rendering
+        function redraw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Saved Polygons
+            for (const [id, points] of Object.entries(polygons)) {
+                drawPolygon(points, true, id);
+            }
+            
+            // In-Progress Polygon
+            if (currentPoints.length > 0) {
+                drawPolygon(currentPoints, false);
+            }
+        }
+
+        function drawPolygon(nativePoints, isComplete, label = "") {
+            if (nativePoints.length === 0) return;
+            
+            const displayPoints = nativePoints.map(p => toDisplay(p.x, p.y));
+            
+            ctx.beginPath();
+            ctx.moveTo(displayPoints[0].x, displayPoints[0].y);
+            
+            for (let i = 1; i < displayPoints.length; i++) {
+                ctx.lineTo(displayPoints[i].x, displayPoints[i].y);
+            }
+            
+            if (isComplete) {
+                ctx.closePath();
+                // Emerald styling
+                ctx.fillStyle = "rgba(16, 185, 129, 0.25)"; 
+                ctx.fill();
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = "#10b981"; 
+                ctx.stroke();
+                
+                // Draw Label
+                const centerX = displayPoints.reduce((sum, p) => sum + p.x, 0) / displayPoints.length;
+                const centerY = displayPoints.reduce((sum, p) => sum + p.y, 0) / displayPoints.length;
+                
+                // Label background pill
+                ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+                ctx.font = "600 13px Inter";
+                const textWidth = ctx.measureText(label).width;
+                const pad = 12;
+                const h = 24;
+                ctx.beginPath();
+                ctx.roundRect(centerX - (textWidth + pad)/2, centerY - h/2, textWidth + pad, h, h/2);
+                ctx.fill();
+                ctx.strokeStyle = "rgba(255,255,255,0.1)";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                // Text
+                ctx.fillStyle = "#ffffff";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(label, centerX, centerY + 1);
+            } else {
+                // In progress styling (Blue)
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = "#3b82f6";
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]); // reset
+            }
+            
+            // Draw interactive vertices
+            displayPoints.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = isComplete ? "#10b981" : "#3b82f6";
+                ctx.fill();
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Hover effect logic could be added here, but visually this is solid.
+            });
+        }
+
+        // Sidebar Management
+        window.deleteSlot = (id) => {
+            delete polygons[id];
+            updateSidebar();
+            redraw();
+        };
+
+        function updateSidebar() {
+            const ids = Object.keys(polygons);
+            slotCount.textContent = ids.length;
+            
+            if (ids.length === 0) {
+                emptySlotsMsg.style.display = 'flex';
+                slotsList.innerHTML = '';
+                slotsList.appendChild(emptySlotsMsg);
+                return;
+            }
+            
+            emptySlotsMsg.style.display = 'none';
+            slotsList.innerHTML = ids.map(id => `
+                <div class="flex justify-between items-center bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/50 hover:border-slate-600/80 transition-all group hover:shadow-lg hover:shadow-black/20">
+                    <span class="font-semibold text-white flex items-center gap-3">
+                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
+                        ${id}
+                    </span>
+                    <button onclick="deleteSlot('${id}')" class="text-slate-500 hover:text-red-400 hover:bg-red-400/10 p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100" title="Delete Slot">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Export JSON
+        exportBtn.addEventListener('click', () => {
+            if (Object.keys(polygons).length === 0) {
+                alert("No slots to export!");
+                return;
+            }
+            
+            // Format strictly as required by backend YOLO system [ [x,y], [x,y] ]
+            const finalJson = {};
+            for (const [id, points] of Object.entries(polygons)) {
+                finalJson[id] = points.map(p => [p.x, p.y]);
+            }
+            
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(finalJson, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "slots_config.json");
+            document.body.appendChild(downloadAnchorNode); 
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        });
+    </script>
+</body>
+</html>
