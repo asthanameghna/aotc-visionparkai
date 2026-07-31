@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import ParkingMap from "@/components/ParkingMap";
 import Link from "next/link";
 import {
   Radio,
@@ -16,6 +17,45 @@ export default function LivePage() {
   const [wsUrl] = useState("ws://localhost:8000/ws");
   const [showInfo, setShowInfo] = useState(false);
 
+  type Slot = {
+  id: string;
+  status: string;
+  points: number[][];
+};
+
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const [connected, setConnected] = useState(false);
+
+  useEffect(() => {
+  const fetchSlots = async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/slots");
+      const data = await res.json();
+
+      if (data.success) {
+        setSlots(data.slots);
+        setConnected(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setConnected(false);
+    }
+  };
+
+  fetchSlots();
+
+  const interval = setInterval(fetchSlots, 1000);
+
+  return () => clearInterval(interval);
+}, []);
+
+const totalSlots = slots.length;
+
+const occupied = slots.filter(
+  slot => slot.status === "Occupied"
+).length;
+
+const available = totalSlots - occupied;
   return (
     <div className="p-8 space-y-6 h-full">
       {/* Header */}
@@ -78,7 +118,7 @@ export default function LivePage() {
             <WifiOff size={20} style={{ color: '#f59e0b' }} />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#f59e0b' }}>WebSocket Not Connected</div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#f59e0b' }}>{connected ? "Backend Connected" : "Backend Offline"}</div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
               Endpoint: <code style={{ color: 'var(--accent-blue)', fontSize: 11 }}>{wsUrl}</code>
             </div>
@@ -91,7 +131,7 @@ export default function LivePage() {
             style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}
           >
             <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 2 }}>STATUS</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b' }}>Awaiting Backend</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b' }}>{connected ? "Receiving Data" : "Awaiting Backend"}</div>
           </div>
           <div
             className="rounded-xl px-4 py-2"
@@ -168,9 +208,38 @@ export default function LivePage() {
                 >
                   <Wifi size={26} style={{ color: '#f59e0b' }} />
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>
+                {/* <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>
                   Waiting for Live Feed
-                </div>
+                </div> */}
+                <svg
+  width="700"
+  height="500"
+  viewBox="0 0 700 500"
+  style={{ width: "100%", height: "100%" }}
+>
+  {slots.map((slot) => (
+    <g key={slot.id}>
+      <polygon
+        points={slot.points.map((p) => p.join(",")).join(" ")}
+        fill={slot.status === "Occupied" ? "#ff3b5c" : "#00ff88"}
+        stroke="white"
+        strokeWidth="2"
+      />
+
+      <text
+        x={slot.points.reduce((a, b) => a + b[0], 0) / slot.points.length}
+        y={slot.points.reduce((a, b) => a + b[1], 0) / slot.points.length}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill="white"
+        fontSize="12"
+        fontWeight="bold"
+      >
+        {slot.id}
+      </text>
+    </g>
+  ))}
+</svg>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 300, lineHeight: 1.6, marginBottom: 16 }}>
                   When the FastAPI backend streams WebSocket data, this map will
                   render all polygon slots in real-time — flipping between{" "}
@@ -202,9 +271,9 @@ export default function LivePage() {
         <div className="flex flex-col gap-4" style={{ width: 220 }}>
           {/* Stats */}
           {[
-            { icon: Car, label: "Total Slots", value: "—", color: "#00d4ff" },
-            { icon: Car, label: "Occupied", value: "—", color: "#ff3b5c" },
-            { icon: Car, label: "Available", value: "—", color: "#00ff88" },
+            { icon: Car, label: "Total Slots", value: totalSlots, color: "#00d4ff" },
+            { icon: Car, label: "Occupied", value: occupied, color: "#ff3b5c" },
+            { icon: Car, label: "Available", value: available, color: "#00ff88" },
           ].map(({ icon: Icon, label, value, color }) => (
             <div
               key={label}
@@ -234,7 +303,7 @@ export default function LivePage() {
               </span>
             </div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', fontStyle: 'italic' }}>
-              Never — no connection
+              {connected ? "Just now" : "Never — no connection"}
             </div>
           </div>
 
@@ -265,3 +334,5 @@ export default function LivePage() {
     </div>
   );
 }
+
+

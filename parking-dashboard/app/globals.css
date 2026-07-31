@@ -2,20 +2,20 @@
 @import "tailwindcss";
 
 :root {
-  --bg-deep: #050d1a;
-  --bg-surface: #0a1628;
-  --bg-card: rgba(10, 22, 40, 0.7);
-  --border-glow: rgba(0, 212, 255, 0.15);
-  --accent-blue: #00d4ff;
-  --accent-blue-dim: rgba(0, 212, 255, 0.1);
-  --accent-green: #00ff88;
-  --accent-green-dim: rgba(0, 255, 136, 0.1);
-  --accent-red: #ff3b5c;
-  --accent-red-dim: rgba(255, 59, 92, 0.1);
-  --accent-purple: #7c3aed;
-  --text-primary: #f0f6ff;
-  --text-secondary: #8ba3c4;
-  --text-muted: #3d5a80;
+  --bg-deep: #0b0f19;
+  --bg-surface: #0f172a;
+  --bg-card: rgba(255, 255, 255, 0.03);
+  --border-glow: rgba(30, 41, 59, 1);
+  --accent-blue: #38bdf8;
+  --accent-blue-dim: rgba(56, 189, 248, 0.12);
+  --accent-green: #10b981;
+  --accent-green-dim: rgba(16, 185, 129, 0.12);
+  --accent-red: #f43f5e;
+  --accent-red-dim: rgba(244, 63, 94, 0.12);
+  --accent-purple: #818cf8;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
 }
 
 * {
@@ -41,19 +41,19 @@ html, body {
 
 /* ─── Glass Card ─── */
 .glass {
-  background: rgba(10, 22, 40, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-glow);
-  border-radius: 16px;
+  background: var(--bg-card);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(30, 41, 59, 0.95);
+  border-radius: 20px;
 }
 
 .glass-strong {
-  background: rgba(10, 22, 40, 0.85);
+  background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  border-radius: 16px;
+  border: 1px solid rgba(30, 41, 59, 0.95);
+  border-radius: 20px;
 }
 
 /* ─── Glow Effects ─── */
@@ -64,7 +64,7 @@ html, body {
 
 /* ─── Text Gradients ─── */
 .gradient-text {
-  background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -80,8 +80,8 @@ html, body {
 /* ─── Animated grid background ─── */
 .grid-bg {
   background-image:
-    linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
   background-size: 60px 60px;
 }
 
@@ -107,6 +107,11 @@ html, body {
   background: #f59e0b;
   box-shadow: 0 0 8px #f59e0b;
   animation: pulse-dot 1.5s infinite;
+}
+
+.status-dot.offline {
+  background: var(--accent-red);
+  box-shadow: 0 0 8px rgba(244, 63, 94, 0.55);
 }
 
 @keyframes pulse-dot {
@@ -182,14 +187,14 @@ html, body {
 
 .nav-link:hover {
   color: var(--text-primary);
-  background: rgba(0, 212, 255, 0.05);
-  border-color: var(--border-glow);
+  background: rgba(56, 189, 248, 0.06);
+  border-color: rgba(30, 41, 59, 1);
 }
 
 .nav-link.active {
   color: var(--accent-blue);
-  background: rgba(0, 212, 255, 0.08);
-  border-color: rgba(0, 212, 255, 0.2);
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.18);
 }
 
 .nav-link.active::before {
@@ -239,8 +244,8 @@ html, body {
 
 .btn-ghost:hover {
   color: var(--text-primary);
-  background: rgba(0, 212, 255, 0.05);
-  border-color: rgba(0, 212, 255, 0.3);
+  background: rgba(56, 189, 248, 0.06);
+  border-color: rgba(56, 189, 248, 0.2);
 }
 
 .btn-danger {
